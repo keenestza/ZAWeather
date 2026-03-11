@@ -85,11 +85,18 @@ input {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  color: #0f172a;
+  white-space: nowrap;
 }
 
 .btn-secondary {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
+}
+
+.refresh-btn {
+  min-width: 110px;
+  justify-content: center;
 }
 
 .search-wrap {
@@ -163,6 +170,7 @@ input {
   border: 1px solid #cbd5e1;
   border-radius: 16px;
   background: white;
+  max-width: 100%;
 }
 
 .location-pill.active {
@@ -175,6 +183,13 @@ input {
   background: transparent;
   text-align: left;
   cursor: pointer;
+  min-width: 0;
+}
+
+.location-pill-title {
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .icon-btn {
@@ -196,9 +211,15 @@ input {
   gap: 12px;
 }
 
+.current-head-text {
+  min-width: 0;
+}
+
 .current-title {
   font-size: 1.5rem;
   font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .big-temp {
@@ -380,6 +401,14 @@ input {
 }
 
 @media (max-width: 640px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
   .stats-grid,
   .forecast-meta {
     grid-template-columns: 1fr;
@@ -406,5 +435,31 @@ input {
 
   .card-header {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .refresh-btn {
+    width: 100%;
+  }
+
+  .location-pill {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .location-select {
+    width: 100%;
+  }
+
+  .current-head {
+    align-items: flex-start;
+  }
+
+  .current-title {
+    font-size: 1.2rem;
+  }
+
+  .big-temp {
+    font-size: 2.4rem;
   }
 }

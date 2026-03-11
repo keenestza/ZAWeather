@@ -395,9 +395,9 @@ export default function WeatherDashboard() {
             title="ZAWeather"
             icon={<CloudRain size={20} />}
             right={
-              <button className="btn btn-secondary" onClick={fetchWeatherForLocations}>
+              <button className="btn btn-secondary refresh-btn" onClick={fetchWeatherForLocations}>
                 <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
-                <span>Refresh</span>
+                <span>{loadingWeather ? "Refreshing..." : "Refresh"}</span>
               </button>
             }
           >
@@ -446,8 +446,10 @@ export default function WeatherDashboard() {
                   className={`location-pill ${activeId === location.id ? "active" : ""}`}
                 >
                   <button className="location-select" onClick={() => setActiveId(location.id)}>
-                    <div>{location.name}</div>
-                    <div className="muted small">{location.admin1}</div>
+                    <div className="location-pill-title">
+                      {[location.name, location.admin1].filter(Boolean).join(", ")}
+                    </div>
+                    <div className="muted small">{location.country}</div>
                   </button>
                   {locations.length > 1 && (
                     <button
@@ -472,11 +474,11 @@ export default function WeatherDashboard() {
                     isDay={Boolean(activeWeather.current.is_day)}
                     size={34}
                   />
-                  <div>
-                    <div className="current-title">{activeLocation.name}</div>
-                    <div className="muted">
-                      {[activeLocation.admin1, activeLocation.country].filter(Boolean).join(", ")}
+                  <div className="current-head-text">
+                    <div className="current-title">
+                      {[activeLocation.name, activeLocation.admin1].filter(Boolean).join(", ")}
                     </div>
+                    <div className="muted">{activeLocation.country}</div>
                   </div>
                 </div>
 
@@ -631,7 +633,7 @@ export default function WeatherDashboard() {
                   <div className="hour-time">{formatHour(hour.time)}</div>
 
                   <div className="hour-condition">
-                    <WeatherIcon code={hour.weatherCode} isDay={true} size={24} />
+                    <WeatherIcon code={hour.weatherCode} isDay size={24} />
                     <div>
                       <div className="result-name small">
                         {WEATHER_CODES[hour.weatherCode] || "Forecast"}
