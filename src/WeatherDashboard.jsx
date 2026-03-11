@@ -143,9 +143,9 @@ function WeatherIcon({ code, isDay = true, size = 28 }) {
   );
 }
 
-function Card({ title, icon, children, right }) {
+function Card({ title, icon, children, right, className = "" }) {
   return (
-    <section className="card">
+    <section className={`card ${className}`}>
       <div className="card-header">
         <h2>
           {icon}
@@ -268,7 +268,9 @@ export default function WeatherDashboard() {
             precipitation_unit: "mm",
           });
 
-          const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+          const response = await fetch(
+            `https://api.open-meteo.com/v1/forecast?${params.toString()}`
+          );
           if (!response.ok) {
             throw new Error(`Weather request failed for ${location.name}`);
           }
@@ -334,6 +336,11 @@ export default function WeatherDashboard() {
 
   const activeWeather = activeLocation ? weatherById[activeLocation.id] : null;
 
+  const activeLocationLabel = useMemo(() => {
+    if (!activeLocation) return "";
+    return [activeLocation.name, activeLocation.admin1].filter(Boolean).join(", ");
+  }, [activeLocation]);
+
   const hourlyRows = useMemo(() => {
     if (!activeWeather?.hourly?.time) return [];
     return activeWeather.hourly.time.slice(0, 24).map((time, index) => ({
@@ -359,7 +366,8 @@ export default function WeatherDashboard() {
       windMax: activeWeather.daily.wind_speed_10m_max?.[index] ?? 0,
       sunrise: activeWeather.daily.sunrise?.[index] ?? null,
       sunset: activeWeather.daily.sunset?.[index] ?? null,
-      precipitationProbabilityMax: activeWeather.daily.precipitation_probability_max?.[index] ?? 0,
+      precipitationProbabilityMax:
+        activeWeather.daily.precipitation_probability_max?.[index] ?? 0,
       precipitationSum: activeWeather.daily.precipitation_sum?.[index] ?? 0,
     }));
   }, [activeWeather]);
@@ -389,17 +397,31 @@ export default function WeatherDashboard() {
 
   return (
     <div className="app-shell">
+      <div className="mobile-topbar">
+        <div className="mobile-topbar-inner">
+          <div className="mobile-brand">
+            <CloudRain size={18} />
+            <span>ZAWeather</span>
+          </div>
+          <button className="btn btn-secondary mobile-refresh" onClick={fetchWeatherForLocations}>
+            <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
       <div className="container">
         <div className="top-grid">
           <Card
             title="ZAWeather"
             icon={<CloudRain size={20} />}
             right={
-              <button className="btn btn-secondary refresh-btn" onClick={fetchWeatherForLocations}>
+              <button className="btn btn-secondary desktop-refresh" onClick={fetchWeatherForLocations}>
                 <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
-                <span>{loadingWeather ? "Refreshing..." : "Refresh"}</span>
+                <span>Refresh</span>
               </button>
             }
+            className="hero-card"
           >
             <p className="muted">
               ZAWeather — your South African weather dashboard powered by Open-Meteo.
@@ -465,7 +487,7 @@ export default function WeatherDashboard() {
             </div>
           </Card>
 
-          <Card title="Current Conditions" icon={<MapPin size={20} />}>
+          <Card title="Current Conditions" icon={<MapPin size={20} />} className="current-card">
             {activeLocation && activeWeather?.current ? (
               <div className="current-section">
                 <div className="current-head">
@@ -475,9 +497,7 @@ export default function WeatherDashboard() {
                     size={34}
                   />
                   <div className="current-head-text">
-                    <div className="current-title">
-                      {[activeLocation.name, activeLocation.admin1].filter(Boolean).join(", ")}
-                    </div>
+                    <div className="current-title">{activeLocationLabel}</div>
                     <div className="muted">{activeLocation.country}</div>
                   </div>
                 </div>
