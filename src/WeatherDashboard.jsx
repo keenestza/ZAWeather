@@ -11,6 +11,9 @@ import {
   Sunset,
   Thermometer,
   Compass,
+  Moon,
+  Sun,
+  Clock3,
 } from "lucide-react";
 import {
   Area,
@@ -29,6 +32,8 @@ import "./weather.css";
 const STORAGE_KEYS = {
   locations: "weather-dashboard-locations",
   active: "weather-dashboard-active",
+  theme: "zaweather-theme",
+  hourlyRange: "zaweather-hourly-range",
 };
 
 const DEFAULT_LOCATIONS = [
@@ -101,6 +106,12 @@ function getWindLabel(speed) {
   return "Very strong";
 }
 
+function getWindDirectionLabel(degrees) {
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const index = Math.round((((degrees % 360) + 360) % 360) / 45) % 8;
+  return directions[index];
+}
+
 function formatHour(value) {
   return new Date(value).toLocaleTimeString("en-ZA", {
     hour: "2-digit",
@@ -123,6 +134,14 @@ function formatSunTime(value) {
   });
 }
 
+function formatUpdatedTime(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleTimeString("en-ZA", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function getWeatherIcon(code, isDay = true) {
   if (code === 0) return isDay ? "🌞" : "🌙";
   if ([1, 2].includes(code)) return isDay ? "🌤️" : "☁️";
@@ -133,6 +152,29 @@ function getWeatherIcon(code, isDay = true) {
   if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄️";
   if ([95, 96, 99].includes(code)) return "⛈️";
   return isDay ? "🌡️" : "🌙";
+}
+
+function setFavicon() {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#0ea5e9"/>
+      <circle cx="24" cy="24" r="10" fill="#fbbf24"/>
+      <g fill="#ffffff">
+        <circle cx="38" cy="38" r="10"/>
+        <circle cx="28" cy="40" r="8"/>
+        <rect x="20" y="36" width="26" height="10" rx="5"/>
+      </g>
+    </svg>
+  `.trim();
+
+  const href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.href = href;
 }
 
 function WeatherIcon({ code, isDay = true, size = 28 }) {
@@ -198,6 +240,14 @@ export default function WeatherDashboard() {
     if (typeof window === "undefined") return DEFAULT_LOCATIONS[0].id;
     return window.localStorage.getItem(STORAGE_KEYS.active) || DEFAULT_LOCATIONS[0].id;
   });
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return window.localStorage.getItem(STORAGE_KEYS.theme) || "light";
+  });
+  const [hourlyRange, setHourlyRange] = useState(() => {
+    if (typeof window === "undefined") return 24;
+    return Number(window.localStorage.getItem(STORAGE_KEYS.hourlyRange) || 24);
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -205,10 +255,17 @@ export default function WeatherDashboard() {
   const [weatherById, setWeatherById] = useState({});
   const [loadingWeather, setLoadingWeather] = useState(false);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState("");
 
   useEffect(() => {
     document.title = "ZAWeather";
+    setFavicon();
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem(STORAGE_KEYS.theme, theme);
+  }, [theme]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.locations, JSON.stringify(locations));
@@ -217,6 +274,10 @@ export default function WeatherDashboard() {
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEYS.active, activeId);
   }, [activeId]);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEYS.hourlyRange, String(hourlyRange));
+  }, [hourlyRange]);
 
   useEffect(() => {
     if (!locations.find((location) => location.id === activeId) && locations[0]) {
@@ -281,6 +342,7 @@ export default function WeatherDashboard() {
       );
 
       setWeatherById(Object.fromEntries(results));
+      setLastUpdated(new Date().toISOString());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load weather data.");
     } finally {
@@ -343,18 +405,22 @@ export default function WeatherDashboard() {
 
   const hourlyRows = useMemo(() => {
     if (!activeWeather?.hourly?.time) return [];
-    return activeWeather.hourly.time.slice(0, 24).map((time, index) => ({
+    return activeWeather.hourly.time.slice(0, hourlyRange).map((time, index) => ({
       time,
       hourLabel: formatHour(time),
       temperature: activeWeather.hourly.temperature_2m?.[index] ?? 0,
       windSpeed: activeWeather.hourly.wind_speed_10m?.[index] ?? 0,
       windDirection: activeWeather.hourly.wind_direction_10m?.[index] ?? 0,
+      windDirectionLabel: getWindDirectionLabel(
+        activeWeather.hourly.wind_direction_10m?.[index] ?? 0
+      ),
       gusts: activeWeather.hourly.wind_gusts_10m?.[index] ?? 0,
       weatherCode: activeWeather.hourly.weather_code?.[index] ?? 0,
-      precipitationProbability: activeWeather.hourly.precipitation_probability?.[index] ?? 0,
+      precipitationProbability:
+        activeWeather.hourly.precipitation_probability?.[index] ?? 0,
       precipitation: activeWeather.hourly.precipitation?.[index] ?? 0,
     }));
-  }, [activeWeather]);
+  }, [activeWeather, hourlyRange]);
 
   const dailyRows = useMemo(() => {
     if (!activeWeather?.daily?.time) return [];
@@ -403,10 +469,22 @@ export default function WeatherDashboard() {
             <CloudRain size={18} />
             <span>ZAWeather</span>
           </div>
-          <button className="btn btn-secondary mobile-refresh" onClick={fetchWeatherForLocations}>
-            <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
-            <span>Refresh</span>
-          </button>
+          <div className="mobile-topbar-actions">
+            <button
+              className="btn btn-secondary compact-btn"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+            <button
+              className="btn btn-secondary mobile-refresh"
+              onClick={fetchWeatherForLocations}
+              disabled={loadingWeather}
+            >
+              <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
+              <span>{loadingWeather ? "..." : "Refresh"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -416,16 +494,51 @@ export default function WeatherDashboard() {
             title="ZAWeather"
             icon={<CloudRain size={20} />}
             right={
-              <button className="btn btn-secondary desktop-refresh" onClick={fetchWeatherForLocations}>
-                <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
-                <span>Refresh</span>
-              </button>
+              <div className="header-actions">
+                <button
+                  className="btn btn-secondary desktop-theme-btn"
+                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                >
+                  {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+                  <span>{theme === "light" ? "Dark" : "Light"}</span>
+                </button>
+                <button
+                  className="btn btn-secondary desktop-refresh"
+                  onClick={fetchWeatherForLocations}
+                  disabled={loadingWeather}
+                >
+                  <RefreshCw size={16} className={loadingWeather ? "spin" : ""} />
+                  <span>{loadingWeather ? "Refreshing..." : "Refresh"}</span>
+                </button>
+              </div>
             }
             className="hero-card"
           >
             <p className="muted">
               ZAWeather — your South African weather dashboard powered by Open-Meteo.
             </p>
+
+            <div className="meta-row">
+              <div className="meta-chip">
+                <Clock3 size={14} />
+                <span>Updated {formatUpdatedTime(lastUpdated)}</span>
+              </div>
+
+              <div className="toggle-group">
+                <button
+                  className={`toggle-btn ${hourlyRange === 24 ? "active" : ""}`}
+                  onClick={() => setHourlyRange(24)}
+                >
+                  24h
+                </button>
+                <button
+                  className={`toggle-btn ${hourlyRange === 48 ? "active" : ""}`}
+                  onClick={() => setHourlyRange(48)}
+                >
+                  48h
+                </button>
+              </div>
+            </div>
 
             <div className="search-wrap">
               <Search size={16} className="search-icon" />
@@ -488,7 +601,9 @@ export default function WeatherDashboard() {
           </Card>
 
           <Card title="Current Conditions" icon={<MapPin size={20} />} className="current-card">
-            {activeLocation && activeWeather?.current ? (
+            {loadingWeather && !activeWeather ? (
+              <div className="loading-panel">Loading weather…</div>
+            ) : activeLocation && activeWeather?.current ? (
               <div className="current-section">
                 <div className="current-head">
                   <WeatherIcon
@@ -516,6 +631,13 @@ export default function WeatherDashboard() {
                     value={`${Math.round(Number(activeWeather.current.wind_speed_10m) || 0)} km/h`}
                   />
                   <StatBox
+                    icon={<Compass size={16} />}
+                    label="Direction"
+                    value={`${getWindDirectionLabel(
+                      Number(activeWeather.current.wind_direction_10m) || 0
+                    )} ${Math.round(Number(activeWeather.current.wind_direction_10m) || 0)}°`}
+                  />
+                  <StatBox
                     icon={<CloudRain size={16} />}
                     label="Rain now"
                     value={`${Number(activeWeather.current.precipitation || 0).toFixed(1)} mm`}
@@ -530,23 +652,36 @@ export default function WeatherDashboard() {
                     label="Sunset"
                     value={dailyRows[0]?.sunset ? formatSunTime(dailyRows[0].sunset) : "—"}
                   />
+                  <StatBox
+                    icon={<Clock3 size={16} />}
+                    label="Updated"
+                    value={formatUpdatedTime(lastUpdated)}
+                  />
                 </div>
               </div>
             ) : (
-              <div className="muted">Loading current weather…</div>
+              <div className="muted">No weather loaded yet.</div>
             )}
           </Card>
         </div>
 
-        {error ? <div className="error-box">{error}</div> : null}
+        {error ? (
+          <div className="error-box">
+            <div className="error-title">Could not load weather data</div>
+            <div className="error-message">{error}</div>
+            <button className="btn btn-secondary" onClick={fetchWeatherForLocations}>
+              Try again
+            </button>
+          </div>
+        ) : null}
 
         <div className="middle-grid">
-          <Card title="Hourly Wind Chart (Next 24 Hours)" icon={<Wind size={20} />}>
+          <Card title={`Wind Chart (Next ${hourlyRange} Hours)`} icon={<Wind size={20} />}>
             <div className="chart-box">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={hourlyRows}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hourLabel" minTickGap={20} />
+                  <XAxis dataKey="hourLabel" minTickGap={24} />
                   <YAxis yAxisId="left" unit=" km/h" />
                   <YAxis yAxisId="right" orientation="right" unit="%" />
                   <Tooltip content={<ChartTooltip />} />
@@ -587,12 +722,12 @@ export default function WeatherDashboard() {
             </div>
           </Card>
 
-          <Card title="Rainfall (Next 24 Hours)" icon={<CloudRain size={20} />}>
+          <Card title={`Rainfall (Next ${hourlyRange} Hours)`} icon={<CloudRain size={20} />}>
             <div className="chart-box">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={hourlyRows}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="hourLabel" minTickGap={20} />
+                  <XAxis dataKey="hourLabel" minTickGap={24} />
                   <YAxis unit=" mm" />
                   <Tooltip content={<ChartTooltip />} />
                   <Area
@@ -646,7 +781,7 @@ export default function WeatherDashboard() {
             </div>
           </Card>
 
-          <Card title="Hourly Conditions (Next 24 Hours)" icon={<Thermometer size={20} />}>
+          <Card title={`Hourly Conditions (Next ${hourlyRange} Hours)`} icon={<Thermometer size={20} />}>
             <div className="hourly-list">
               {hourlyRows.map((hour) => (
                 <div key={hour.time} className="hour-row hour-row-detailed">
@@ -684,7 +819,9 @@ export default function WeatherDashboard() {
 
                   <div className="hour-metric">
                     <Compass size={16} />
-                    <span>{Math.round(hour.windDirection)}°</span>
+                    <span>
+                      {hour.windDirectionLabel} {Math.round(hour.windDirection)}°
+                    </span>
                   </div>
                 </div>
               ))}

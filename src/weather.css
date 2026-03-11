@@ -1,7 +1,3 @@
-* {
-  box-sizing: border-box;
-}
-
 :root {
   --bg-start: #e0f2fe;
   --bg-mid: #ffffff;
@@ -11,6 +7,35 @@
   --muted: #64748b;
   --text: #0f172a;
   --sky: #0ea5e9;
+  --surface: #ffffff;
+  --surface-soft: rgba(255, 255, 255, 0.72);
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --input-bg: #ffffff;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #b91c1c;
+}
+
+:root[data-theme="dark"] {
+  --bg-start: #020617;
+  --bg-mid: #0f172a;
+  --bg-end: #082f49;
+  --card-bg: rgba(15, 23, 42, 0.82);
+  --card-border: rgba(51, 65, 85, 0.9);
+  --muted: #94a3b8;
+  --text: #e2e8f0;
+  --sky: #38bdf8;
+  --surface: #111827;
+  --surface-soft: rgba(15, 23, 42, 0.72);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --input-bg: #0f172a;
+  --danger-bg: rgba(127, 29, 29, 0.3);
+  --danger-border: rgba(248, 113, 113, 0.45);
+  --danger-text: #fecaca;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html {
@@ -32,6 +57,7 @@ input {
 .app-shell {
   min-height: 100vh;
   padding: 16px;
+  color: var(--text);
 }
 
 .mobile-topbar {
@@ -47,12 +73,17 @@ input {
   gap: 12px;
 }
 
+.mobile-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .mobile-brand {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  letter-spacing: 0.01em;
 }
 
 .container {
@@ -86,7 +117,7 @@ input {
   border: 1px solid var(--card-border);
   border-radius: 24px;
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow);
   backdrop-filter: blur(6px);
 }
 
@@ -131,22 +162,80 @@ input {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
+  transition: 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .btn-secondary {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
   color: var(--text);
 }
 
+.btn-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
 .desktop-refresh {
-  min-width: 108px;
+  min-width: 118px;
   justify-content: center;
 }
 
-.mobile-refresh {
-  min-width: 104px;
-  justify-content: center;
+.compact-btn {
+  padding: 10px 12px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.meta-row {
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.toggle-group {
+  display: inline-flex;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.toggle-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.toggle-btn.active {
+  background: var(--sky);
+  color: white;
 }
 
 .search-wrap {
@@ -163,10 +252,10 @@ input {
 
 .search-input {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--card-border);
   border-radius: 16px;
   padding: 12px 14px 12px 38px;
-  background: white;
+  background: var(--input-bg);
   color: var(--text);
 }
 
@@ -175,13 +264,14 @@ input {
   border: 1px solid var(--card-border);
   border-radius: 16px;
   overflow: hidden;
-  background: white;
+  background: var(--surface);
 }
 
 .search-row {
   width: 100%;
   border: 0;
-  background: white;
+  background: var(--surface);
+  color: var(--text);
   text-align: left;
   padding: 12px 14px;
   display: flex;
@@ -191,7 +281,7 @@ input {
 }
 
 .search-row:hover {
-  background: #f8fafc;
+  filter: brightness(0.98);
 }
 
 .result-name {
@@ -199,8 +289,8 @@ input {
 }
 
 .pill {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--sky);
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 0.82rem;
@@ -218,15 +308,15 @@ input {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--card-border);
   border-radius: 16px;
-  background: white;
+  background: var(--surface);
   max-width: 100%;
 }
 
 .location-pill.active {
-  border-color: #38bdf8;
-  background: #f0f9ff;
+  border-color: var(--sky);
+  background: rgba(14, 165, 233, 0.08);
 }
 
 .location-select {
@@ -236,6 +326,7 @@ input {
   cursor: pointer;
   min-width: 0;
   flex: 1;
+  color: var(--text);
 }
 
 .location-pill-title {
@@ -293,7 +384,7 @@ input {
   border: 1px solid var(--card-border);
   border-radius: 18px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--surface-soft);
 }
 
 .stat-label {
@@ -310,24 +401,43 @@ input {
   font-size: 1.1rem;
 }
 
+.loading-panel {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .error-box {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+  border: 1px solid var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger-text);
   border-radius: 20px;
   padding: 14px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.error-title {
+  font-weight: 700;
+}
+
+.error-message {
+  font-size: 0.95rem;
 }
 
 .chart-box {
   width: 100%;
-  height: 290px;
+  height: 320px;
 }
 
 .chart-tooltip {
-  background: white;
-  border: 1px solid #cbd5e1;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
   border-radius: 14px;
   padding: 10px 12px;
+  color: var(--text);
 }
 
 .chart-tooltip-title {
@@ -339,7 +449,7 @@ input {
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  color: #475569;
+  color: var(--muted);
 }
 
 .forecast-list,
@@ -353,7 +463,7 @@ input {
   border: 1px solid var(--card-border);
   border-radius: 18px;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface-soft);
 }
 
 .forecast-main {
@@ -379,46 +489,19 @@ input {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px 14px;
-  color: #475569;
+  color: var(--muted);
   font-size: 0.92rem;
 }
 
-.hour-row {
+.hour-row-detailed {
   display: grid;
-  grid-template-columns: 80px 1fr auto;
+  grid-template-columns: 90px 1.4fr repeat(5, minmax(90px, auto));
   align-items: center;
   gap: 12px;
 }
 
 .hour-time {
   font-weight: 700;
-}
-
-.hour-middle {
-  display: grid;
-  gap: 6px;
-}
-
-.bar-bg {
-  height: 8px;
-  border-radius: 999px;
-  background: #e2e8f0;
-  overflow: hidden;
-}
-
-.bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--sky);
-}
-
-.hour-right {
-  text-align: right;
-}
-
-.hour-row-detailed {
-  grid-template-columns: 90px 1.4fr repeat(5, minmax(90px, auto));
-  align-items: center;
 }
 
 .hour-condition {
@@ -431,7 +514,7 @@ input {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #334155;
+  color: var(--text);
   font-size: 0.92rem;
 }
 
@@ -455,6 +538,10 @@ input {
   .hour-row-detailed {
     grid-template-columns: 1fr 1fr;
   }
+
+  .chart-box {
+    height: 280px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -469,12 +556,13 @@ input {
     z-index: 50;
     margin: 0 -12px 12px;
     padding: 10px 12px;
-    background: rgba(255, 255, 255, 0.92);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(203, 213, 225, 0.9);
+    border-bottom: 1px solid var(--card-border);
   }
 
-  .desktop-refresh {
+  .desktop-refresh,
+  .desktop-theme-btn {
     display: none;
   }
 
@@ -493,23 +581,25 @@ input {
     gap: 16px;
   }
 
+  .meta-row {
+    align-items: stretch;
+  }
+
+  .toggle-group {
+    width: 100%;
+  }
+
+  .toggle-btn {
+    flex: 1;
+  }
+
   .stats-grid,
   .forecast-meta {
     grid-template-columns: 1fr;
   }
 
-  .hour-row {
-    grid-template-columns: 1fr;
-    text-align: left;
-  }
-
   .hour-row-detailed {
     grid-template-columns: 1fr;
-  }
-
-  .hour-right,
-  .forecast-right {
-    text-align: left;
   }
 
   .hour-condition,
@@ -550,5 +640,9 @@ input {
   .forecast-row,
   .hour-row {
     padding: 12px;
+  }
+
+  .chart-box {
+    height: 240px;
   }
 }
