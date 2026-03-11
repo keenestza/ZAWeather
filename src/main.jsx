@@ -8,3 +8,10 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/ZAWeather/service-worker.js").catch((error) => {
+      console.error("Service worker registration failed:", error);
+    });
+  });
+}

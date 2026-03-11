@@ -1,0 +1,23 @@
+{
+  "name": "ZAWeather",
+  "short_name": "ZAWeather",
+  "start_url": "/ZAWeather/",
+  "scope": "/ZAWeather/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "/ZAWeather/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/ZAWeather/apple-touch-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

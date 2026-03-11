@@ -177,6 +177,23 @@ function setFavicon() {
   link.href = href;
 }
 
+function getWeatherWarnings(current, dailyToday) {
+  const warnings = [];
+
+  const wind = Number(current?.wind_speed_10m || 0);
+  const rainNow = Number(current?.precipitation || 0);
+  const maxTemp = Number(dailyToday?.max || 0);
+  const rainChance = Number(dailyToday?.precipitationProbabilityMax || 0);
+
+  if (wind >= 40) warnings.push({ label: "Strong wind", tone: "amber" });
+  if (rainNow >= 3 || rainChance >= 80) {
+    warnings.push({ label: "High rain risk", tone: "blue" });
+  }
+  if (maxTemp >= 32) warnings.push({ label: "Hot day", tone: "red" });
+
+  return warnings;
+}
+
 function WeatherIcon({ code, isDay = true, size = 28 }) {
   return (
     <span title={WEATHER_CODES[code] || "Unknown"} style={{ fontSize: `${size}px` }}>
@@ -300,11 +317,14 @@ export default function WeatherDashboard() {
               "weather_code",
               "wind_speed_10m",
               "wind_direction_10m",
+              "wind_gusts_10m",
+              "apparent_temperature",
               "is_day",
               "precipitation",
             ].join(","),
             hourly: [
               "temperature_2m",
+              "apparent_temperature",
               "weather_code",
               "wind_speed_10m",
               "wind_direction_10m",
@@ -319,6 +339,7 @@ export default function WeatherDashboard() {
               "wind_speed_10m_max",
               "sunrise",
               "sunset",
+              "uv_index_max",
               "precipitation_probability_max",
               "precipitation_sum",
             ].join(","),
@@ -409,6 +430,7 @@ export default function WeatherDashboard() {
       time,
       hourLabel: formatHour(time),
       temperature: activeWeather.hourly.temperature_2m?.[index] ?? 0,
+      apparentTemperature: activeWeather.hourly.apparent_temperature?.[index] ?? 0,
       windSpeed: activeWeather.hourly.wind_speed_10m?.[index] ?? 0,
       windDirection: activeWeather.hourly.wind_direction_10m?.[index] ?? 0,
       windDirectionLabel: getWindDirectionLabel(
@@ -432,11 +454,17 @@ export default function WeatherDashboard() {
       windMax: activeWeather.daily.wind_speed_10m_max?.[index] ?? 0,
       sunrise: activeWeather.daily.sunrise?.[index] ?? null,
       sunset: activeWeather.daily.sunset?.[index] ?? null,
+      uvIndexMax: activeWeather.daily.uv_index_max?.[index] ?? 0,
       precipitationProbabilityMax:
         activeWeather.daily.precipitation_probability_max?.[index] ?? 0,
       precipitationSum: activeWeather.daily.precipitation_sum?.[index] ?? 0,
     }));
   }, [activeWeather]);
+
+  const warnings = useMemo(() => {
+    if (!activeWeather?.current || !dailyRows[0]) return [];
+    return getWeatherWarnings(activeWeather.current, dailyRows[0]);
+  }, [activeWeather, dailyRows]);
 
   function addLocation(result) {
     const location = {
@@ -624,6 +652,16 @@ export default function WeatherDashboard() {
                   {WEATHER_CODES[activeWeather.current.weather_code] || "Current weather"}
                 </div>
 
+                {warnings.length > 0 && (
+                  <div className="warning-row">
+                    {warnings.map((warning) => (
+                      <span key={warning.label} className={`warning-pill warning-${warning.tone}`}>
+                        {warning.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <div className="stats-grid">
                   <StatBox
                     icon={<Wind size={16} />}
@@ -636,6 +674,11 @@ export default function WeatherDashboard() {
                     value={`${getWindDirectionLabel(
                       Number(activeWeather.current.wind_direction_10m) || 0
                     )} ${Math.round(Number(activeWeather.current.wind_direction_10m) || 0)}°`}
+                  />
+                  <StatBox
+                    icon={<Thermometer size={16} />}
+                    label="Feels like"
+                    value={`${Math.round(Number(activeWeather.current.apparent_temperature) || 0)}°C`}
                   />
                   <StatBox
                     icon={<CloudRain size={16} />}
@@ -656,6 +699,11 @@ export default function WeatherDashboard() {
                     icon={<Clock3 size={16} />}
                     label="Updated"
                     value={formatUpdatedTime(lastUpdated)}
+                  />
+                  <StatBox
+                    icon={<Sun size={16} />}
+                    label="UV max"
+                    value={`${Number(dailyRows[0]?.uvIndexMax || 0).toFixed(1)}`}
                   />
                 </div>
               </div>
@@ -773,6 +821,7 @@ export default function WeatherDashboard() {
                   <div className="forecast-meta">
                     <div>Rain chance {Math.round(day.precipitationProbabilityMax || 0)}%</div>
                     <div>Rain {Number(day.precipitationSum || 0).toFixed(1)} mm</div>
+                    <div>UV {Number(day.uvIndexMax || 0).toFixed(1)}</div>
                     <div>Sunrise {day.sunrise ? formatSunTime(day.sunrise) : "—"}</div>
                     <div>Sunset {day.sunset ? formatSunTime(day.sunset) : "—"}</div>
                   </div>
@@ -781,7 +830,10 @@ export default function WeatherDashboard() {
             </div>
           </Card>
 
-          <Card title={`Hourly Conditions (Next ${hourlyRange} Hours)`} icon={<Thermometer size={20} />}>
+          <Card
+            title={`Hourly Conditions (Next ${hourlyRange} Hours)`}
+            icon={<Thermometer size={20} />}
+          >
             <div className="hourly-list">
               {hourlyRows.map((hour) => (
                 <div key={hour.time} className="hour-row hour-row-detailed">
@@ -793,7 +845,10 @@ export default function WeatherDashboard() {
                       <div className="result-name small">
                         {WEATHER_CODES[hour.weatherCode] || "Forecast"}
                       </div>
-                      <div className="muted small">{Math.round(hour.temperature)}°C</div>
+                      <div className="muted small">
+                        {Math.round(hour.temperature)}°C • feels like{" "}
+                        {Math.round(hour.apparentTemperature)}°C
+                      </div>
                     </div>
                   </div>
 
